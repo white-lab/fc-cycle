@@ -66,8 +66,6 @@ def _get_serial(serial_name=None):
         else:
             return port
 
-    return sys.stdout
-
     raise Exception("Unable to find any valid serial ports", excepts)
 
 
