@@ -1,0 +1,38 @@
+version: Build {build}
+
+skip_non_tags: true
+
+build:
+    verbosity: minimal
+
+environment:
+    matrix:
+        - PYTHON: "C:\\Python36-x64"
+          platform: x64
+
+install:
+    - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+    - "python --version"
+    - "pip install -r requirements.txt"
+    - "pip install git+git://github.com/pyinstaller/pyinstaller.git@develop"
+
+build_script:
+    - "pyinstaller fc_cycle.spec"
+
+test_script:
+    - "python setup.py test"
+
+artifacts:
+    - path: dist\FC-Cycle.exe
+      name: FC-Cycle
+
+deploy:
+    - provider: GitHub
+      description: "Cycler program for Gilson FC 204 Fraction Collector"
+      artifact: FC-Cycle
+      draft: false
+      prerelease: false
+      on:
+        appveyor_repo_tag: true
+      auth_token:
+        secure: +GzJ//tQ7T8IYqT0tFSseDQ7N5+HfGrh6pv4DHVTMxy3fhd5KYYXUfhgXkqoCIfn
