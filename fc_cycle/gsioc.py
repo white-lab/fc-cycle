@@ -103,7 +103,6 @@ def get_serial(serial_name=None, gsioc_id=None):
 
     for path in [
         "COM5",
-        "/dev/ttyUSB0",
         "COM1",
         "COM2",
         "COM3",
