@@ -37,33 +37,37 @@ class HandleSerial(serial.Serial):
         run_command(self, text.encode())
 
 
+def _open_serial(path):
+    return HandleSerial(
+        path,
+        baudrate=9600,
+        bytesize=serial.EIGHTBITS,
+        parity=serial.PARITY_EVEN,
+        stopbits=serial.STOPBITS_ONE,
+        xonxoff=False,
+        rtscts=True,
+        dsrdtr=True,
+        timeout=0.1,
+        write_timeout=.1,
+    )
+
+
 def _get_serial(serial_name=None):
     if serial_name:
-        return serial.Serial(serial_name)
+        return _open_serial(serial_name)
 
     excepts = []
 
     for path in [
+        "COM5",
         "/dev/ttyUSB0",
         "COM1",
         "COM2",
         "COM3",
         "COM4",
-        "COM5",
     ]:
         try:
-            port = HandleSerial(
-                path,
-                baudrate=9600,
-                bytesize=serial.EIGHTBITS,
-                parity=serial.PARITY_EVEN,
-                stopbits=serial.STOPBITS_ONE,
-                xonxoff=False,
-                rtscts=True,
-                dsrdtr=True,
-                timeout=0.1,
-                write_timeout=.1,
-            )
+            port = _open_serial(path)
         except serial.SerialException as e:
             excepts.append(e)
             continue
