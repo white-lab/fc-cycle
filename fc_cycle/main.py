@@ -1,40 +1,40 @@
-
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import argparse
 import logging
 import math
+import ctypes
 import serial
-import serial.threaded
+from serial import win32
 import sys
 import time
-import traceback
 
 from fc_cycle import __version__
 
 LOGGER = logging.getLogger("fc_cycle.main")
 
+serial.XON = 0
+serial.XOFF = 0
 
-class HandleSerial(serial.threaded.LineReader):
-    def connection_made(self, transport):
-        super(HandleSerial, self).connection_made(transport)
-        LOGGER.info('port opened')
 
-    def handle_packet(self, data):
-        LOGGER.debug("received packet: {}".format(repr(data)))
-        super(HandleSerial, self).handle_packet(data)
+class HandleSerial(serial.Serial):
+    def _reconfigure_port(self):
+        super(HandleSerial, self)._reconfigure_port()
 
-    def handle_line(self, data):
-        LOGGER.info("received line: {}".format(repr(data)))
+        comDCB = win32.DCB()
+        win32.GetCommState(self._port_handle, ctypes.byref(comDCB))
+
+        comDCB.fOutxCtsFlow = 0
+        comDCB.fOutxDsrFlow = 0
+
+        if not win32.SetCommState(self._port_handle, ctypes.byref(comDCB)):
+                raise serial.SerialException(
+                    'Cannot configure port, something went wrong. '
+                    'Original message: {!r}'.format(ctypes.WinError()))
 
     def write_line(self, text):
         LOGGER.info("writing line: {}".format(repr(text)))
-        super(HandleSerial, self).write_line(text)
-
-    def connection_lost(self, exc):
-        if exc:
-            traceback.print_exc(exc)
-        LOGGER.info('port closed')
+        run_command(self, text.encode())
 
 
 def _get_serial(serial_name=None):
@@ -49,15 +49,22 @@ def _get_serial(serial_name=None):
         "COM2",
         "COM3",
         "COM4",
+        "COM5",
     ]:
         try:
-            port = serial.Serial(
+            port = HandleSerial(
                 path,
-                baudrate=19200,  # 9600?
-                parity=serial.PARITY_EVEN,  # PARITY_NONE?
+                baudrate=9600,
+                bytesize=serial.EIGHTBITS,
+                parity=serial.PARITY_EVEN,
                 stopbits=serial.STOPBITS_ONE,
+                xonxoff=False,
+                rtscts=True,
+                dsrdtr=True,
+                timeout=0.1,
+                write_timeout=.1,
             )
-        except serial.serialutil.SerialException as e:
+        except serial.SerialException as e:
             excepts.append(e)
             continue
         else:
@@ -135,6 +142,50 @@ def _set_verbosity(args):
     LOGGER.debug(args)
 
 
+def run_command(port, message, id=61):
+    to_write = (128 + id).to_bytes(1, byteorder='big')
+    LOGGER.info("id: {}, message: {}".format(id, message))
+    LOGGER.debug("w: {}".format(to_write))
+    port.write(to_write)
+    LOGGER.debug("r: {}".format(port.read(1)))
+    win32.PurgeComm(port._port_handle, win32.PURGE_RXCLEAR)
+
+    if len(message) > 1:
+        to_write = b"\x0a"
+        LOGGER.debug("w: {}".format(to_write))
+        port.write(b"\x0a")
+        LOGGER.debug("r: {}".format(port.read(1)))
+        win32.PurgeComm(port._port_handle, win32.PURGE_RXCLEAR)
+
+    for letter in message:
+        LOGGER.debug("w: {}".format(letter.to_bytes(1, byteorder='big')))
+        port.write(letter.to_bytes(1, byteorder='big'))
+        LOGGER.debug("r: {}".format(port.read(1)))
+        win32.PurgeComm(port._port_handle, win32.PURGE_RXCLEAR)
+
+    if len(message) > 1:
+        to_write = b"\x0d"
+        LOGGER.debug("w: {}".format(to_write))
+        port.write(to_write)
+        LOGGER.debug("r: {}".format(port.read(1)))
+        win32.PurgeComm(port._port_handle, win32.PURGE_RXCLEAR)
+
+    while True:
+        rep = port.read(1)
+        if not rep:
+            break
+        rep = rep[0]
+        LOGGER.debug("r: {}".format(rep.to_bytes(1, byteorder="big")))
+        win32.PurgeComm(port._port_handle, win32.PURGE_RXCLEAR)
+
+        to_write = b"\x06"
+        LOGGER.debug("w: {}".format(to_write))
+        port.write(to_write)
+        if rep > 127:
+            LOGGER.debug("break")
+            break
+
+
 def main(args):
     _, args = _parse_args(args)
     _set_verbosity(args)
@@ -148,18 +199,18 @@ def main(args):
     total_time *= 60
     delay *= 60
 
-    with serial.ReaderThread(
-        _get_serial(serial_name),
-        HandleSerial,
-    ) as ser:
+    with _get_serial(serial_name) as ser:
+        win32.PurgeComm(ser._port_handle, win32.PURGE_RXCLEAR)
+
         try:
             # Beep and display Hello World
+            ser.write_line("%")
             ser.write_line("G010")
             ser.write_line("W0Hello")
             ser.write_line("W01World")
-            ser.write_line("V1")
+            ser.write_line("X000")
+            ser.write_line("Y000")
             time.sleep(delay)
-            ser.write_line("V0")
 
             # Cycle through each tube
             for i in range(math.ceil((total_time - delay) / tube_time)):
@@ -169,10 +220,8 @@ def main(args):
             LOGGER.info("Closing connection")
         finally:
             # Reset the machine
-            ser.write_line("V1")
-            time.sleep(10)
-            ser.write_line("$")
-            ser.close()
+            ser.write_line("X000")
+            ser.write_line("Y000")
 
 
 if __name__ == "__main__":
