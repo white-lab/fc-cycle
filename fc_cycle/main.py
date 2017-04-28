@@ -18,6 +18,10 @@ serial.XOFF = 0
 
 
 class HandleSerial(serial.Serial):
+    def __init__(self, *args, **kwargs):
+        self.gsioc_id = kwargs.pop("gsioc_id", None) or 61
+        super(HandleSerial, self).__init__(*args, **kwargs)
+
     def _reconfigure_port(self):
         super(HandleSerial, self)._reconfigure_port()
 
@@ -34,12 +38,13 @@ class HandleSerial(serial.Serial):
 
     def write_line(self, text):
         LOGGER.info("writing line: {}".format(repr(text)))
-        run_command(self, text.encode())
+        run_command(self, text.encode(), gsioc_id=self.gsioc_id)
 
 
-def _open_serial(path):
+def _open_serial(path, gsioc_id=None):
     return HandleSerial(
         path,
+        gsioc_id=gsioc_id,
         baudrate=9600,
         bytesize=serial.EIGHTBITS,
         parity=serial.PARITY_EVEN,
@@ -52,9 +57,9 @@ def _open_serial(path):
     )
 
 
-def _get_serial(serial_name=None):
+def _get_serial(serial_name=None, gsioc_id=None):
     if serial_name:
-        return _open_serial(serial_name)
+        return _open_serial(serial_name, gsioc_id=gsioc_id)
 
     excepts = []
 
@@ -67,7 +72,7 @@ def _get_serial(serial_name=None):
         "COM4",
     ]:
         try:
-            port = _open_serial(path)
+            port = _open_serial(path, gsioc_id=gsioc_id)
         except serial.SerialException as e:
             excepts.append(e)
             continue
@@ -146,9 +151,9 @@ def _set_verbosity(args):
     LOGGER.debug(args)
 
 
-def run_command(port, message, id=61):
-    to_write = (128 + id).to_bytes(1, byteorder='big')
-    LOGGER.info("id: {}, message: {}".format(id, message))
+def run_command(port, message, gsioc_id=61):
+    to_write = (128 + gsioc_id).to_bytes(1, byteorder='big')
+    LOGGER.info("id: {}, message: {}".format(gsioc_id, message))
     LOGGER.debug("w: {}".format(to_write))
     port.write(to_write)
     LOGGER.debug("r: {}".format(port.read(1)))
@@ -195,6 +200,7 @@ def main(args):
     _set_verbosity(args)
 
     serial_name = input("Serial Port Name (optional): ")
+    gsioc_id = input("GSIOC ID (default 61): ")
     max_tubes = int(input("Max Tubes (default: 20): ") or 20)
     delay = int(input("Delay in Minutes (default: 5): ") or 5)
     total_time = int(input("Total Time in Minutes (default: 85): ") or 85)
@@ -203,7 +209,7 @@ def main(args):
     total_time *= 60
     delay *= 60
 
-    with _get_serial(serial_name) as ser:
+    with _get_serial(serial_name, gsioc_id=gsioc_id) as ser:
         win32.PurgeComm(ser._port_handle, win32.PURGE_RXCLEAR)
 
         try:
