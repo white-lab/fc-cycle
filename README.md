@@ -6,7 +6,7 @@ Utility for collecting fraction in a cycle on the Gilson FC 204 Fraction Collect
 
 ## Installation
 
-To download a completely packaged Windows executable, visit our [releases page](https://github.com/white-lab/fc-cycler/releases)
+To download a completely packaged Windows executable, visit our [releases page](https://github.com/white-lab/fc-cycler/releases). This software has only been tested on Windows as it required altering several serial flow control settings that require platform-dependent code.
 
 ## Hardware
 
