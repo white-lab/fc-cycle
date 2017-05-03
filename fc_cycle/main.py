@@ -92,7 +92,6 @@ def main(args):
     tube_time = int(input("Time per tube in Seconds (default: 60): ") or 60)
 
     total_time *= 60
-    delay *= 60
 
     with gsioc.get_serial(serial_name, gsioc_id=gsioc_id) as ser:
         try:
@@ -124,6 +123,9 @@ def main(args):
             LOGGER.info("Closing connection")
         finally:
             # Reset the machine
+            ser.write_line("X000")
+            ser.write_line("Y000")
+            time.sleep(1)
             ser.write_line("X000")
             ser.write_line("Y000")
 
