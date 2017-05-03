@@ -87,7 +87,7 @@ def main(args):
     serial_name = input("Serial Port Name (optional): ")
     gsioc_id = input("GSIOC ID (default 61): ")
     max_tubes = int(input("Max Tubes (default: 20): ") or 20)
-    delay = int(input("Delay in Minutes (default: 5): ") or 5)
+    delay = int(input("Delay in Seconds (default: 600): ") or 600)
     total_time = int(input("Total Time in Minutes (default: 85): ") or 85)
     tube_time = int(input("Time per tube in Seconds (default: 60): ") or 60)
 
@@ -101,13 +101,24 @@ def main(args):
             ser.write_line("G010")
             ser.write_line("W0Hello")
             ser.write_line("W01World")
-            ser.write_line("X000")
-            ser.write_line("Y000")
-            time.sleep(delay)
+
+            if delay > 0:
+                ser.write_line("X000")
+                ser.write_line("Y000")
+                time.sleep(delay)
 
             # Cycle through each tube
-            for i in range(math.ceil((total_time - delay) / tube_time)):
-                ser.write_line("T{:03d}".format((i % max_tubes) + 1))
+            total_tubes = math.ceil((total_time - delay) / tube_time)
+
+            for i in range(total_tubes):
+                tube_pos = (i % max_tubes) + 1
+
+                LOGGER.info(
+                    "Tube {} / {} (Position: {})"
+                    .format(i + 1, total_tubes, tube_pos)
+                )
+                ser.write_line("T{:03d}".format(tube_pos))
+
                 time.sleep(tube_time)
         except KeyboardInterrupt as err:
             LOGGER.info("Closing connection")
@@ -118,4 +129,9 @@ def main(args):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    try:
+        main(sys.argv[1:])
+    except:
+        LOGGER.error("Execution error!", exc_info=True)
+        input()
+        sys.exit(1)
