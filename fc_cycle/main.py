@@ -84,6 +84,8 @@ def main(args):
     _, args = _parse_args(args)
     _set_verbosity(args)
 
+    LOGGER.debug("Running FC-Cycle Version {}".format(__version__))
+
     serial_name = input("Serial Port Name (optional): ")
     gsioc_id = input("GSIOC ID (default 61): ")
     max_tubes = int(input("Max Tubes (default: 20): ") or 20)
