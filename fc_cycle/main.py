@@ -80,6 +80,16 @@ def _set_verbosity(args):
     LOGGER.debug(args)
 
 
+def get_tube_pos(index, max_tubes, rack_length=11):
+    tube_pos = (index % max_tubes) + 1
+
+    if max_tubes < rack_length * 2:
+        if tube_pos > max_tubes / 2:
+            tube_pos += rack_length * 2 - max_tubes
+
+    return tube_pos
+
+
 def main(args):
     _, args = _parse_args(args)
     _set_verbosity(args)
@@ -111,8 +121,10 @@ def main(args):
             # Cycle through each tube
             total_tubes = math.ceil((total_time - delay) / tube_time)
 
+            ser.write_line("T001")
+
             for i in range(total_tubes):
-                tube_pos = (i % max_tubes) + 1
+                tube_pos = get_tube_pos(i, max_tubes)
 
                 LOGGER.info(
                     "Tube {} / {} (Position: {})"

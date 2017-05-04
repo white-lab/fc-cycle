@@ -1,5 +1,15 @@
 # Change Log
 
+## 1.2.0
+
+Features
+
+  - Cycle tubes (1-6, 17-22) to reduce arm movement.
+
+Bug fixes
+
+  - Send T001 twice initially to avoid skipping tube 1.
+
 ## 1.1.0
 
 Features
