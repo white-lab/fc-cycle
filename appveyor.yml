@@ -22,7 +22,7 @@ install:
 
 build_script:
     - "pyinstaller fc_cycle.spec"
-    - "move dist\\FC-Cycle.exe dist\\FC-Cycle-${PLATFORM}.exe"
+    - ps: "move dist\\FC-Cycle.exe dist\\FC-Cycle-${env:PLATFORM}.exe"
 
 test_script:
     - "python setup.py test"
