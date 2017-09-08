@@ -8,7 +8,11 @@ build:
 environment:
     matrix:
         - PYTHON: "C:\\Python34-x64"
+          PYTHON_ARCH: "64"
           platform: x64
+        - PYTHON: "C:\\Python34"
+          PYTHON_ARCH: "32"
+          platform: x86
 
 install:
     - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
@@ -23,13 +27,12 @@ test_script:
     - "python setup.py test"
 
 artifacts:
-    - path: dist\FC-Cycle.exe
-      name: FC-Cycle
+    - path: "dist\FC-Cycle*.exe"
 
 deploy:
     - provider: GitHub
       description: "Cycler program for Gilson FC 204 Fraction Collector"
-      artifact: FC-Cycle
+      artifact: /FC-Cycle.*\.exe/
       draft: false
       prerelease: false
       on:
