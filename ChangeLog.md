@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.3.0
+
+Features
+
+  - Added separate 32-bit and 64-bit builds.
+
 ## 1.2.0
 
 Features
