@@ -9,10 +9,10 @@ environment:
     matrix:
         - PYTHON: "C:\\Python34-x64"
           PYTHON_ARCH: "64"
-          platform: x64
+          platform: "x64"
         - PYTHON: "C:\\Python34"
           PYTHON_ARCH: "32"
-          platform: x86
+          platform: "x86"
 
 install:
     - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
@@ -27,7 +27,7 @@ test_script:
     - "python setup.py test"
 
 artifacts:
-    - path: "dist\FC-Cycle*.exe"
+    - path: "dist\\FC-Cycle*.exe"
 
 deploy:
     - provider: GitHub
