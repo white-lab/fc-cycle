@@ -1,6 +1,7 @@
 
 import logging
 import serial
+import serial.tools.list_ports
 import ctypes
 from serial import win32
 
@@ -100,14 +101,15 @@ def get_serial(serial_name=None, gsioc_id=None):
         return _open_serial(serial_name, gsioc_id=gsioc_id)
 
     excepts = []
+    
+    com_ports = serial.tools.list_ports.comports()
+    com_ports = [
+        i.device for i in sorted(com_ports, key=lambda x: ('USB-to-Serial' not in x.description, x.device))
+    ]
+    
+    LOGGER.info('Testing COM ports: {}'.format(com_ports))
 
-    for path in [
-        "COM5",
-        "COM1",
-        "COM2",
-        "COM3",
-        "COM4",
-    ]:
+    for path in com_ports:
         try:
             port = _open_serial(path, gsioc_id=gsioc_id)
         except serial.SerialException as e:
