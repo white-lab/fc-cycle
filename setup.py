@@ -1,17 +1,22 @@
 
 import os
-from pip.req import parse_requirements
-from pip.download import PipSession
 from setuptools import setup, find_packages
 
-from fc_cycle import __version__
+__dir__ = os.path.dirname(__file__)
 
+with open(
+    os.path.join(__dir__, "fc_cycle", "__init__.py")
+) as f:
+    __version__ = "0.0.0"
 
-REQUIREMENTS_PATH = os.path.abspath(
-    os.path.join(
-        os.path.dirname(__file__), "requirements.txt",
-    )
-)
+    for line in f:
+        if "#" in line:
+            line = line[:line.index("#")]
+
+        if not line.startswith("__version__ ="):
+            continue
+
+        __version__ = line.split("=")[1].strip().strip("\"")
 
 
 setup(
@@ -26,8 +31,7 @@ setup(
     license="BSD",
     packages=find_packages(exclude=["*.tests", "tests"]),
     install_requires=[
-        str(i.req)
-        for i in parse_requirements(REQUIREMENTS_PATH, session=PipSession())
+        "pyserial==3.3",
     ],
     dependency_links=[],
     classifiers=[
