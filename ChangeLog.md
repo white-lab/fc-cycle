@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.4.0
+
+Features
+
+  - Prioritize COM ports with "USB-to-Serial" in their description.
+
 ## 1.3.0
 
 Features
